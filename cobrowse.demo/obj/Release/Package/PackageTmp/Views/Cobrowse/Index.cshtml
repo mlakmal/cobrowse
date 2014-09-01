@@ -1,0 +1,72 @@
+﻿@{
+    ViewBag.Title = "Co-browse Push/Polling Notify Demo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="jumbotron">
+    <h1>Co-browse Push/Polling Notify Demo</h1>
+    <p class="lead">You can use this application to understand how co-browse push vs polling works.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <h2>Agent</h2>
+        <p>
+            Click below link to emulate an agent, and from that page you can push co-browse enable notification to specific user.
+        </p>
+        <p>
+            <input id="btnEmulateAgent" type="button" value="Emulate Agent" class="btn btn-default" />
+            <a href="/cobrowse/agent" target="_blank" id="hdnAgentlink"></a>
+        </p>
+    </div>
+    <div class="col-md-5">
+        <h2>Polling/Push Member</h2>
+        <p>
+            Select the member type and enter sample username and click the Emulate button. this will emulate members login with selected message notification type.
+            <ul>
+                <li>Polling member will poll (server) to check if co-browse is enabled in 5 second intervals.</li>
+                <li>Push notified member will automatically get a notification from server if co-browse is enabled.</li>
+            </ul>
+        </p>
+        <p>
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label for="rbtnPushType1" class="col-md-2 control-label">Member Type: </label>
+                    <div class="col-md-10">
+                        <input type="radio" id="rbtnPushType1" name="rbtnPushType" checked="checked" value="cache" />
+                        <label for="rbtnPushType1">Polling Member</label>
+                        <br/>
+                        <input type="radio" id="rbtnPushType2" name="rbtnPushType" value="signalr" />
+                        <label for="rbtnPushType2">Push Notified Member</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="txtUsername" class="col-md-2 control-label">Username: </label>
+                    <div class="col-md-10">
+                        <input id="txtUsername" type="text" class="form-control" value="test" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <input id="btnEmulateUser" type="button" value="Emulate Member" class="btn btn-default" />
+                    </div>
+                </div>
+            </div>
+        </p>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#btnEmulateUser").click(function () {
+                if ($("#txtUsername").val().length > 0) {
+                    document.location.href = "/cobrowse/emulate?userName=" + $("#txtUsername").val() + "&pushType=" + $("input[name$='rbtnPushType']:checked").val();
+                }
+            });
+            $("#btnEmulateAgent").click(function () {
+                $("#hdnAgentlink")[0].click();
+            });
+        });
+    </script>
+}

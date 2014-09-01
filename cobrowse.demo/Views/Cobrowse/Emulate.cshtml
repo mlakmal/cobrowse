@@ -1,0 +1,134 @@
+﻿@using System.Data.Entity.Core.Common.EntitySql
+@using cobrowse.demo.Models
+@model EmulateModel
+@{
+    ViewBag.Title = string.Format(" {0} Member", (Model.PushType.Equals("signalr", StringComparison.CurrentCultureIgnoreCase) ? "Push Notified" : "Polling"));
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@string.Format("{0} Member", (Model.PushType.Equals("signalr", StringComparison.CurrentCultureIgnoreCase) ? "Push Notified" : "Polling"))</h2>
+<div>
+    @if (Model.PushType.Equals("signalr", StringComparison.CurrentCultureIgnoreCase))
+    {
+        <span>This page waits for server to respond if co-browse is enabled by agent for member "@(Model.Username)". if enabled, popup message will get visible with the livelook confirmation number. </span>
+
+    }
+    else
+    {
+    <span>This page polls the server (every 5 seconds) to to check member "@(Model.Username)" has co-browse enabled by agent. if enabled, popup message will get visible with the livelook confirmation number. </span>
+    }
+</div>
+<input type="hidden" id="hdnUsername" value="@(Model.Username)" />
+
+<div id="divCobrowseConfirm" style="display: none;">
+    <span>Your livelook confirmation Number is: 123456. <br/> Please give this number to customer representative agent.</span>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/scripts/jquery-ui-1.10.4.js")
+
+    @if (Model.PushType.Equals("cache", StringComparison.CurrentCultureIgnoreCase))
+    {
+        <script type="text/javascript">
+            function poll() {
+                var data = {};
+                $.ajax({
+                    type: "GET",
+                    url: "/cobrowse/checkstatus?username=" + $("#hdnUsername").val(),
+                    data: JSON.stringify(data),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    complete: function (jsonResponse, status) {
+                        if (status == "success") {
+                            var responseData = JSON.parse(jsonResponse.responseText);
+                            if (!responseData) {
+                                setTimeout(function () {
+                                    poll();
+                                }, 5000);
+                            } else {
+                                disableCobrowse();
+                                $("#divCobrowseConfirm").dialog("open");
+                            }
+                        } else {
+                        }
+                    }
+                });
+            }
+
+            function disableCobrowse() {
+                var data = {};
+                $.ajax({
+                    type: "GET",
+                    url: "/cobrowse/DisableCobrowse?username=" + $("#hdnUsername").val(),
+                    data: JSON.stringify(data),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    complete: function (jsonResponse, status) {
+                        if (status == "success") {
+                        } else {
+                        }
+                    }
+                });
+            }
+
+
+            $(document).ready(function () {
+                poll();
+
+                $("#divCobrowseConfirm").dialog({
+                    autoOpen: false,
+                    modal: true,
+                    draggable: false,
+                    stack: true,
+                    resizable: false,
+                    closeOnEscape: false,
+                    width: 'auto',
+                    close: function (event, ui) {
+                        poll();
+                    },
+                    title: "Co-browse Enabled"
+                });
+            });
+        </script>
+    }
+    else
+    {
+        @Scripts.Render("~/Scripts/jquery.signalR-2.0.3.min.js")
+        @Scripts.Render("~/signalr/hubs")
+
+        <script type="text/javascript">
+            function inititatePushNotifications() {
+                $.connection.hub.qs = { "userName": $("#hdnUsername").val() };
+                var hub = $.connection.cobrowseHub;
+                hub.state.userName = $("#hdnUsername").val();
+                hub.state.computerName = "test";
+
+                hub.client.checkCobrowse = function (name, message) {
+                    // Add the message to the page.
+                    //alert(message);
+                    $("#divCobrowseConfirm").dialog("open");
+                };
+
+                $.connection.hub.start().done(function () {
+                });
+            }
+
+            $(document).ready(function () {
+                inititatePushNotifications();
+
+                $("#divCobrowseConfirm").dialog({
+                    autoOpen: false,
+                    modal: true,
+                    draggable: false,
+                    stack: true,
+                    resizable: false,
+                    closeOnEscape: false,
+                    width: 'auto'
+                });
+            });
+        </script>
+
+    }
+}
+
